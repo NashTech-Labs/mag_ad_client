@@ -14,10 +14,10 @@
   <video autoplay id="screen-view" width="50%"></video>
   <button id="get-screen" style="display:none">Get the screen</button>
   <button id="stop-screen" style="display:none">Stop the screen</button>
-
+  <script src="mediaStreamRecorder.min.js"></script>
   <script>
     (() => {
-      const EXTENSION_ID = 'jddhjhbnjocnpcnmlgaemhlmbjpelebg';
+      const EXTENSION_ID = 'bjnjldgahgbpplfnjdiefpgppcpjbgfg';
 
       chrome.runtime.sendMessage(EXTENSION_ID, 'version', response => {
         if (!response) {
@@ -49,6 +49,37 @@
                   video.src = URL.createObjectURL(stream);
                   getScreen.style.display = 'none';
                   stopScreen.style.display = 'inline';
+                  var mediaRecorder = new MediaStreamRecorder(stream);
+                  mediaRecorder.mimeType = 'video/webm';
+                  mediaRecorder.ondataavailable = function (blob) {
+                      var reader = new FileReader();
+                      reader.readAsDataURL(blob);
+                      reader.onloadend = function() {
+                          base64data = reader.result;
+                          console.log(base64data); //Send this data to REST end point
+                          var sendInfo = {
+                              id: 'first_video',
+                              data: base64data
+                          };
+                          $.ajax({
+                              type: "POST",
+                              url : "http://localhost:8081/frame",
+                              dataType: "json",
+                              success: function (msg) {
+                                  if(msg) {
+                                      console.log(msg);
+                                  } else {
+                                      console.log('Some went wrong with reqest')
+                                  }
+
+                              },
+
+                              data: sendInfo
+                          })
+                      }
+                  };
+                  //TODO convert the below parameter 1000 to configurable
+                  mediaRecorder.start(1000);
                 })
                 .catch(err => {
                   console.error('Could not get stream: ', err);
