@@ -14,6 +14,7 @@
   <video autoplay id="screen-view" width="50%"></video>
   <button id="get-screen" style="display:none">Get the screen</button>
   <button id="stop-screen" style="display:none">Stop the screen</button>
+  <script src="jquery-3.3.1.min.js"></script>
   <script src="mediaStreamRecorder.min.js"></script>
   <script>
     (() => {
@@ -55,26 +56,28 @@
                       var reader = new FileReader();
                       reader.readAsDataURL(blob);
                       reader.onloadend = function() {
-                          base64data = reader.result;
+                          base64data = reader.result.toString().split(",")[1];
                           console.log(base64data); //Send this data to REST end point
                           var sendInfo = {
                               id: 'first_video',
                               data: base64data
                           };
+
+                          console.log("The json is::::::;" + JSON.stringify(sendInfo));
                           $.ajax({
                               type: "POST",
-                              url : "http://localhost:8081/frame",
+                              crossDomain: true,
+                              url : "http://localhost:8081/frames",
                               dataType: "json",
+                              contentType: "application/json",
                               success: function (msg) {
                                   if(msg) {
-                                      console.log(msg);
+                                      console.log('REsponse is;;;;;;;;;;;;;;;;;;;;;;;;;;;;' + msg);
                                   } else {
                                       console.log('Some went wrong with reqest')
                                   }
-
                               },
-
-                              data: sendInfo
+                              data: JSON.stringify(sendInfo)
                           })
                       }
                   };
@@ -89,7 +92,6 @@
             }
           });
         });
-
         stopScreen.addEventListener('click', event => {
           stream.getTracks().forEach(track => track.stop());
           video.src = '';
